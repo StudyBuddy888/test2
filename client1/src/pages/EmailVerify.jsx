@@ -39,24 +39,49 @@ const handlePaste = (e) =>{
   })
 }
 
-const onSubmitHandler = async (e)=>{
+const onSubmitHandler = async (e) => {
   try {
     e.preventDefault();
-    const otpArray = inputRefs.current.map(e => e.value)
-    const otp = otpArray.join('')
+    const otpArray = inputRefs.current.map((e) => e.value);
+    const otp = otpArray.join("");
 
-    const {data} = await axios.post(backendUrl + '/api/auth/verify-account',{otp})
-    if(data.success){
-      toast.success(data.message)
-      getUserData()
-      navigate('/')
-    }else{
-      toast.error(data.message)
+    const token = localStorage.getItem("token"); 
+    if (!token) {
+      toast.error("User not authenticated. Please log in again.");
+      navigate("/login"); 
+      return;
+    }
+
+    console.log("Sending OTP:", otp);
+    console.log("API URL:", `${backendUrl}/api/auth/verify-account`);
+
+    const response = await axios.post(
+      `${backendUrl}/api/auth/verify-account`,
+      { otp },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`, 
+          "Content-Type": "application/json",
+        },
+        validateStatus: (status) => status < 500, // Prevents throwing error for 4xx status
+      }
+    );
+
+    console.log("Response:", response);
+
+    if (response.data.success) {
+      toast.success(response.data.message);
+      getUserData();
+      navigate("/");
+    } else {
+      toast.error(response.data.message);
     }
   } catch (error) {
-    toast.error(data.message)
+    console.error("Error:", error); 
+    toast.error(error.response?.data?.message || "Something went wrong");
   }
-}
+};
+
 
 useEffect(()=>{
   isLoggedin && userData && userData.isAccountVerified && navigate('/')
