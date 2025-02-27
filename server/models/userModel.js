@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 const TaskSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   title: { type: String, required: true },
+  startTime: { type: Date, required: true },  // Ensure startTime is in the schema
   status: {
     type: String,
     enum: ["Completed", "Incompleted", "Skipped"],
@@ -11,6 +12,7 @@ const TaskSchema = new mongoose.Schema({
   },
   createdAt: { type: Date, default: Date.now },
 });
+
 
 // User Schema
 const userSchema = new mongoose.Schema({
@@ -22,7 +24,7 @@ const userSchema = new mongoose.Schema({
   isAccountVerified: { type: Boolean, default: false },
   resetOTP: { type: String, default: "" },
   resetOTPExpireAt: { type: Number, default: 0 },
-  sessionTime: { type: Number, default: 0 },
+  taskScheduleTime: { type: Date, default: Date.now }, // Changed from sessionTime to taskScheduleTime
   tasks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Task" }],
 });
 

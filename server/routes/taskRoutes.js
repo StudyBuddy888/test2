@@ -11,6 +11,6 @@ router.post("/add-task", userAuth, addTask);
 router.put("/update-task/:taskId", userAuth, updateTaskStatus);
 
 // 📌 Route to get all tasks for a specific user
-router.get("/user-tasks/:userId", userAuth, getTasks);
+router.get("/tasks/:userId", userAuth, getTasks);
 
 export default router;

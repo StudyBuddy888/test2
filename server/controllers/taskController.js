@@ -1,38 +1,53 @@
-import User from "../models/userModel.js";
+import {User,Task} from "../models/userModel.js";
 
 // 📌 Add a Task to a User's Account
+// 📌 Add a Task to a User's Account
+// In taskController.js
 export const addTask = async (req, res) => {
   try {
-    const { userId, title, sessionTime } = req.body;
+    const { title, startTime } = req.body;
 
-    if (!userId || !title || !sessionTime) {
-      return res.status(400).json({ success: false, message: "Missing userId, title, or sessionTime" });
+    if (!title || !startTime) {
+      return res.status(400).json({ success: false, message: "Missing required fields" });
     }
 
-    // Create new task object
-    const newTask = {
+    // Example: Log incoming request data
+    console.log("Received data:", req.body);
+
+    // Create a new Task instance
+    const newTask = new Task({
       title,
-      sessionTime,
+      startTime,
       status: "Incomplete",
       createdAt: new Date(),
-    };
+      userId: req.body.userId, // Make sure the userId is correctly passed
+    });
 
-    // Find user and push task into tasks array
+    // Save the new task to the database
+    await newTask.save();
+
+    // Assuming you have a userId from the decoded JWT (token)
+    const userId = req.body.userId; // Or get from token, depending on your middleware setup
     const user = await User.findById(userId);
+
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    user.tasks.push(newTask);
-    await user.save(); // Ensure task is saved in DB
+    // Push the saved task's ObjectId into the user's tasks array
+    user.tasks.push(newTask._id);
+    await user.save();
 
-    res.status(201).json({
+    // Log the user data after task addition
+    console.log("Updated user tasks:", user.tasks);
+
+    return res.status(201).json({
       success: true,
       message: "Task added successfully",
       tasks: user.tasks,
     });
-
   } catch (err) {
+    // Log the error to the console
     console.error("Error adding task:", err);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
@@ -67,6 +82,7 @@ export const updateTaskStatus = async (req, res) => {
 };
 
 // 📌 Get Tasks for a Specific User
+// 📌 Get Tasks for a Specific User
 export const getTasks = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -80,7 +96,13 @@ export const getTasks = async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    res.status(200).json({ success: true, tasks: user.tasks });
+    res.status(200).json({
+      success: true,
+      tasks: user.tasks.map(task => ({
+        ...task.toObject(),
+        startTime: task.startTime.toISOString(), // Ensure startTime is in ISO string format
+      })),
+    });
 
   } catch (err) {
     console.error("Error fetching tasks:", err);
